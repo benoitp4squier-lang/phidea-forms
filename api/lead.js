@@ -1,14 +1,15 @@
-import type { VercelRequest, VercelResponse } from "@vercel/node";
-import { randomUUID } from "node:crypto";
+const { randomUUID } = require("node:crypto");
 
 const LIGHTFIELD_ENDPOINT = "https://api.lightfield.app/v1/contacts";
 const LIGHTFIELD_VERSION = "2026-03-01";
 const SITE_ORIGIN = "https://phidea.eu";
 
-export default async function handler(req: VercelRequest, res: VercelResponse) {
+module.exports = async function handler(req, res) {
   if (req.method !== "POST") {
     res.setHeader("Allow", "POST");
-    return res.status(405).send("Method Not Allowed");
+    res.statusCode = 405;
+    res.end("Method Not Allowed");
+    return;
   }
 
   const apiKey = process.env.LIGHTFIELD_API_KEY;
@@ -17,11 +18,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return redirect(res, `${SITE_ORIGIN}/oops.html`);
   }
 
-  const body = (req.body ?? {}) as Record<string, string>;
-  const email = (body.email ?? "").trim().toLowerCase();
-  const carrier = (body.carrier ?? "").trim();
-  const lob = (body.lob ?? "").trim();
-  const variant = (body.variant ?? "").trim();
+  const body = req.body || {};
+  const email = String(body.email || "").trim().toLowerCase();
+  const carrier = String(body.carrier || "").trim();
+  const lob = String(body.lob || "").trim();
+  const variant = String(body.variant || "").trim();
 
   const noteLines = [
     carrier && `Company: ${carrier}`,
@@ -31,7 +32,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     req.headers["user-agent"] && `User-agent: ${req.headers["user-agent"]}`,
   ].filter(Boolean);
 
-  const fields: Record<string, unknown> = { $notes: noteLines.join("\n") };
+  const fields = { $notes: noteLines.join("\n") };
   if (email) fields.$email = [email];
   if (carrier) fields.$title = carrier;
 
@@ -58,9 +59,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   }
 
   return redirect(res, `${SITE_ORIGIN}/merci.html`);
-}
+};
 
-function redirect(res: VercelResponse, url: string) {
+function redirect(res, url) {
+  res.statusCode = 303;
   res.setHeader("Location", url);
-  return res.status(303).send("");
+  res.end("");
 }
