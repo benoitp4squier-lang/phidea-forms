@@ -51,15 +51,19 @@ module.exports = async function handler(req, res) {
     if (!response.ok) {
       const text = await response.text();
       console.error("Lightfield error", response.status, text);
-      return redirect(res, `${SITE_ORIGIN}/oops.html`);
+      return redirect(res, withVariant(`${SITE_ORIGIN}/oops.html`, variant));
     }
   } catch (err) {
     console.error("Lightfield request failed", err);
-    return redirect(res, `${SITE_ORIGIN}/oops.html`);
+    return redirect(res, withVariant(`${SITE_ORIGIN}/oops.html`, variant));
   }
 
-  return redirect(res, `${SITE_ORIGIN}/merci.html`);
+  return redirect(res, withVariant(`${SITE_ORIGIN}/merci.html`, variant));
 };
+
+function withVariant(url, variant) {
+  return variant ? `${url}?v=${encodeURIComponent(variant)}` : url;
+}
 
 function redirect(res, url) {
   res.statusCode = 303;
